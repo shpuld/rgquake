@@ -1,24 +1,34 @@
 RgQuake
-==============================
+=======
+
+![](https://github.com/shpuld/rgquake/blob/master/rg350.jpg)
 
 RgQuake is a fork of the modernized version of SDLQuake (https://github.com/ahefner/sdlquake) optimized specifically to be fun to play on a RG350, which is a handheld running OpenDingux. Testing has been done on my RG350p. Thanks to authors of SDLQuake for the groundwork and author of Thenesis Quake for setting pak file conventions.
 
+I've played through all 4 episodes of Quake with this, and it works well with very minimal slowdown even in the most hectic fights. Had one crash after a long playsession, hopefully this isn't common.
+
 Note: only the OpenDingux platform is supported, no other OpenDingux devices have been tested but the rg350p, gcw0 should work but probably needs tweaking the controls in the menus to make the single analog work well.
 
-I'll add .desktop files and launch scripts for hipnotic and rogue later.
 
-
-Changes compared to regular quake
+Changes compared to regular Quake
 ---------------------------------
 
 - Configurable dual or single analog support
 - Added cheats menu into options
 - Added option for generous autoaim for gamepad use
 - Enhanced particle effects
-- Added Weapon wheel
+- Added Weapon wheel (with slowmo)
 - Smoothed out monster movement
 - Added option for crosshair
 - Added option for non-centered weapon models
+- Smoothed out the lightning gun beam when turning
+
+TODO
+----
+
+- .desktop files and launch scripts for hipnotic and rogue mission packs
+- rumble support
+- working screenshot support
 
 Installation
 ------------
