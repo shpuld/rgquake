@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=RgQuake
+Type=Application
+Exec=rgquake -basedir /media/data/Quake
+Icon=logo
+Comment=Enhanced port of Quake
+Terminal=false
+Categories=games;
+X-OD-Manual=manual-gcw0.txt
