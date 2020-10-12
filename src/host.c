@@ -80,6 +80,7 @@ cvar_t	coop = {"coop","0"};			// 0 or 1
 cvar_t	pausable = {"pausable","1"};
 
 cvar_t	temp1 = {"temp1","0"};
+cvar_t	sv_gamespeed = {"sv_gamespeed", "1"};
 
 
 /*
@@ -516,6 +517,12 @@ qboolean Host_FilterTime (float time)
 			host_frametime = 0.1;
 		if (host_frametime < 0.001)
 			host_frametime = 0.001;
+	}
+
+	if (Cvar_FindVar ("sv_gamespeed"))
+	{
+		if (sv_gamespeed.value > 0)
+			host_frametime *= sv_gamespeed.value;
 	}
 	
 	return true;

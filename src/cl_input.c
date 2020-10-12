@@ -161,11 +161,13 @@ void IN_JumpUp (void) {KeyUp(&in_jump);}
 void IN_WeapWheelDown (void) {
 	weapwheel_selection = 0;
 	KeyDown(&in_weapwheel);
+	Cbuf_InsertText ("sv_gamespeed 0.15\n");
 }
 void IN_WeapWheelUp (void) {
 	KeyUp(&in_weapwheel);
 	if (weapwheel_selection != 0)
 		in_impulse = weapwheel_selection;
+	Cbuf_InsertText ("sv_gamespeed 1\n");
 }
 
 void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
@@ -379,7 +381,6 @@ void CL_SendMove (usercmd_t *cmd)
 // send button bits
 //
 	bits = 0;
-	
 	if ( in_attack.state & 3 )
 		bits |= 1;
 	in_attack.state &= ~2;
@@ -387,6 +388,9 @@ void CL_SendMove (usercmd_t *cmd)
 	if (in_jump.state & 3)
 		bits |= 2;
 	in_jump.state &= ~2;
+
+	if (in_weapwheel.state & 1)
+		bits -= bits & 1;
 	
     MSG_WriteByte (&buf, bits);
 
