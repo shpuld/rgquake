@@ -1714,7 +1714,6 @@ void COM_AddGameDirectory (char *dir)
 	char                    pakfile[MAX_OSPATH];
 
 	strcpy (com_gamedir, dir);
-
 //
 // add any pak files in the format pak0.pak pak1.pak, ...
 //
@@ -1774,6 +1773,12 @@ void COM_InitFilesystem (void)
 		realpath("./id1", actualpath);
 
 		COM_AddGameDirectory(actualpath);
+
+		if (COM_CheckParm ("-hipnotic"))
+		{
+			realpath("./hipnotic", actualpath);
+			COM_AddGameDirectory(actualpath);
+		}
 
 		strcpy (basedir, com_argv[i+1]);
 	}

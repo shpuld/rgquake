@@ -983,6 +983,43 @@ else
 		Chase_Update ();
 }
 
+void V_DrawWeaponWheel (void)
+{
+	if ((in_weapwheel.state & 1) && cl.stats[STAT_HEALTH] > 0 && !cl.intermission)
+	{
+		float i = 0;
+		int xCenter = scr_vrect.x + scr_vrect.width/2 - 4;
+		int yCenter = scr_vrect.y + scr_vrect.height/2 - 4;
+		char buffer [5];
+		float joyPosX = weapwheel_x*24;
+		float joyPosY = weapwheel_y*24;
+		for (i = 0; i < 8; i++)
+		{
+			float yPos = -cos(i / 8 * 2*M_PI) * 32;
+			float xPos = sin(i / 8 * 2*M_PI) * 32;
+			char ch = 49 + i;
+			int it_code = (int)((1 << (int)i)*0.5);
+			// Does player have the weapon?
+			if (!(cl.items & it_code) && i > 0)
+				ch = 19 + i;
+
+			if (hipnotic)
+			{
+				// GL and proximity gun share slot...no mjolnir or laser
+				if (i == 5 && (cl.items & HIT_PROXIMITY_GUN))
+					ch = 49 + i;
+			}
+
+			if (weapwheel_selection == i+1)
+			{
+				ch = 49 + i + 128;
+			}
+			Draw_Character (xCenter + xPos, yCenter + yPos, ch);
+			Draw_Character (xCenter + joyPosX, yCenter + joyPosY, 'o');
+		}
+	}
+}
+
 /*
 ==================
 V_RenderView
@@ -1060,33 +1097,7 @@ void V_RenderView (void)
 		Draw_Fill (scr_vrect.x + scr_vrect.width/2 - 1, scr_vrect.y + scr_vrect.height/2 + 2, 2, 1, 13);
 		Draw_Fill (scr_vrect.x + scr_vrect.width/2 - 1, scr_vrect.y + scr_vrect.height/2 + 3, 2, 1, 10);
 	}
-	if ((in_weapwheel.state & 1) && cl.stats[STAT_HEALTH] > 0 && !cl.intermission)
-	{
-		float i = 0;
-		int xCenter = scr_vrect.x + scr_vrect.width/2 - 4;
-		int yCenter = scr_vrect.y + scr_vrect.height/2 - 4;
-		char buffer [5];
-		float joyPosX = weapwheel_x*24;
-		float joyPosY = weapwheel_y*24;
-		for (i = 0; i < 8; i++)
-		{
-			float yPos = -cos(i / 8 * 2*M_PI) * 32;
-			float xPos = sin(i / 8 * 2*M_PI) * 32;
-			char ch = 49 + i;
-			int it_code = (int)((1 << (int)i)*0.5);
-			if (!(cl.items & it_code) && i > 0)
-				ch = 19 + i;
-			if (weapwheel_selection == i+1)
-			{
-				ch = 49 + i + 128;
-			}
-			Draw_Character (xCenter + xPos, yCenter + yPos, ch);
-			Draw_Character (xCenter + joyPosX, yCenter + joyPosY, 'o');
-
-		}
-	}
-		// Draw_Character (scr_vrect.x + scr_vrect.width/2 + cl_crossx.value, 
-		//	scr_vrect.y + scr_vrect.height/2 + cl_crossy.value, '+');
+	V_DrawWeaponWheel ();
 #endif
 		
 }

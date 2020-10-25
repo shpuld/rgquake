@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=RgQuake-Rogue
+Type=Application
+Exec=rgquake -basedir /media/data/Quake -rogue
+Icon=mp2
+Comment=Mission Pack 2: Dissolution of Eternity
+Terminal=false
+Categories=games;
+X-OD-Manual=manual-gcw0.txt
