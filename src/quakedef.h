@@ -137,13 +137,13 @@ void	VID_UnlockBuffer (void);
 
 // stock defines
 
-#define	IT_SHOTGUN				1
-#define	IT_SUPER_SHOTGUN		2
-#define	IT_NAILGUN				4
-#define	IT_SUPER_NAILGUN		8
-#define	IT_GRENADE_LAUNCHER		16
-#define	IT_ROCKET_LAUNCHER		32
-#define	IT_LIGHTNING			64
+#define	IT_SHOTGUN				1		// 2
+#define	IT_SUPER_SHOTGUN		2		// 3
+#define	IT_NAILGUN				4		// 4
+#define	IT_SUPER_NAILGUN		8		// 5
+#define	IT_GRENADE_LAUNCHER		16		// 6
+#define	IT_ROCKET_LAUNCHER		32		// 7
+#define	IT_LIGHTNING			64		// 8
 #define IT_SUPER_LIGHTNING      128
 #define IT_SHELLS               256
 #define IT_NAILS                512

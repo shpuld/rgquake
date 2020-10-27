@@ -103,6 +103,10 @@ void Sys_Error (char *error, ...)
     va_end (argptr);
 	fprintf(stderr, "Error: %s\n", string);
 
+    FILE errorfile = fopen("error.txt", "w");
+    fprintf(errorfile, "Error: %s\n", string);
+    fclose(errorfile);
+
 	Host_Shutdown ();
 	exit (1);
 
@@ -239,7 +243,7 @@ int Sys_FileWrite (int handle, void *src, int count)
 	if ( handle >= 0 ) {
 		data = src;
 		while ( count > 0 ) {
-			done = fread (data, 1, count, sys_handles[handle]);
+			done = fwrite (data, 1, count, sys_handles[handle]);
 			if ( done == 0 ) {
 				break;
 			}

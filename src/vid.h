@@ -65,6 +65,8 @@ void	VID_SetPalette (unsigned char *palette);
 void	VID_ShiftPalette (unsigned char *palette);
 // called for bonus and pain flashes, and for underwater color changes
 
+void VID_PaletteColormath (unsigned char *palette, float hshift, float sf, float lf);
+
 void RG_ErrorScreen (char *error, ...);
 // Added for rg350 to show user errors when files not loaded
 

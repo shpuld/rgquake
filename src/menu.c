@@ -36,6 +36,7 @@ enum {
 	m_setup,
 	m_net,
 	m_options,
+	m_colors,
 	m_video,
 	m_keys,
 	m_help,
@@ -60,6 +61,7 @@ void M_Menu_Main_f (void);
 		void M_Menu_Cheats_f (void);
 		void M_Menu_Keys_f (void);
 		void M_Menu_Video_f (void);
+		void M_Menu_Colors_f (void);
 	void M_Menu_Help_f (void);
 	void M_Menu_Quit_f (void);
 void M_Menu_SerialConfig_f (void);
@@ -80,6 +82,7 @@ void M_Main_Draw (void);
 		void M_Cheats_Draw (void);
 		void M_Keys_Draw (void);
 		void M_Video_Draw (void);
+		void M_Colors_Draw (void);
 	void M_Help_Draw (void);
 	void M_Quit_Draw (void);
 void M_SerialConfig_Draw (void);
@@ -100,6 +103,7 @@ void M_Main_Key (int key);
 		void M_Cheats_Key (int key);
 		void M_Keys_Key (int key);
 		void M_Video_Key (int key);
+		void M_Colors_Key (int key);
 	void M_Help_Key (int key);
 	void M_Quit_Key (int key);
 void M_SerialConfig_Key (int key);
@@ -1071,7 +1075,7 @@ again:
 #ifdef _WIN32
 #define	OPTIONS_ITEMS	14
 #else
-#define	OPTIONS_ITEMS	16
+#define	OPTIONS_ITEMS	17
 #endif
 
 #define	SLIDER_RANGE	10
@@ -1109,7 +1113,7 @@ void M_AdjustSliders (int dir)
 			scr_viewsize.value = 120;
 		Cvar_SetValue ("viewsize", scr_viewsize.value);
 		break;
-	case 4:	// gamma
+	case 5:	// gamma
 		v_gamma.value -= dir * 0.05;
 		if (v_gamma.value < 0.5)
 			v_gamma.value = 0.5;
@@ -1127,7 +1131,7 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue ("sensitivity", sensitivity.value);
 		break;
 	*/
-	case 5:	// music volume
+	case 6:	// music volume
 #ifdef _WIN32
 		bgmvolume.value += dir * 1.0;
 #else
@@ -1139,7 +1143,7 @@ void M_AdjustSliders (int dir)
 			bgmvolume.value = 1;
 		Cvar_SetValue ("bgmvolume", bgmvolume.value);
 		break;
-	case 6:	// sfx volume
+	case 7:	// sfx volume
 		volume.value += dir * 0.1;
 		if (volume.value < 0)
 			volume.value = 0;
@@ -1148,7 +1152,7 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue ("volume", volume.value);
 		break;
 
-	case 7:	// allways run
+	case 8:	// allways run
 		if (cl_forwardspeed.value > 200)
 		{
 			Cvar_SetValue ("cl_forwardspeed", 200);
@@ -1161,18 +1165,18 @@ void M_AdjustSliders (int dir)
 		}
 		break;
 
-	case 8:	// invert mouse
+	case 9:	// invert mouse
 		Cvar_SetValue ("m_pitch", -m_pitch.value);
 		break;
 
-	case 9:
+	case 10:
 		m_yaw.value += dir * 0.05;
 		if (m_yaw.value < 0.12) m_yaw.value = 0.12;
 		if (m_yaw.value > 0.62) m_yaw.value = 0.62;
 		Cvar_SetValue("m_yaw", m_yaw.value);
 		break;
 
-	case 10:
+	case 11:
 		absPitch = fabs(m_pitch.value);
 		absPitch += dir * 0.05;
 		if (absPitch < 0.12) absPitch = 0.12;
@@ -1180,26 +1184,26 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue("m_pitch", copysign(absPitch, m_pitch.value));
 		break;
 
-	case 11:
+	case 12:
 		Cvar_SetValue("swap_analogs", !swap_analogs.value);
 		break;
 
-	case 12:
+	case 13:
 		Cvar_SetValue("weapwheel_use_move", !weapwheel_use_move.value);
 		break;
 
-	case 13:
+	case 14:
 		crosshair.value = !crosshair.value;
 		Cvar_SetValue ("crosshair", crosshair.value);
 		break;
 
-	case 14:
+	case 15:
 		sv_aim.value += dir;
 		if (sv_aim.value < 0) sv_aim.value = 2;
 		if (sv_aim.value > 2) sv_aim.value = 0;
 		Cvar_SetValue ("sv_aim", sv_aim.value);
 
-	case 15:
+	case 16:
 		Cvar_SetValue ("center_weapon", !center_weapon.value);
 		break;
 
@@ -1269,6 +1273,9 @@ void M_Options_Draw (void)
 	M_Print (16, ypos, "           Screen size");
 	r = (scr_viewsize.value - 30) / (120 - 30);
 	M_DrawSlider (220, ypos, r);
+
+	ypos += 8;
+	M_Print (16, ypos, "         Adjust colors");
 
 	ypos += 8;
 	M_Print (16, ypos, "            Brightness");
@@ -1384,6 +1391,9 @@ void M_Options_Key (int k)
 		case 2:
 			// Don't override default default.cfg
 			Cbuf_AddText ("exec rg_default.cfg\n");
+			break;
+		case 4:
+			M_Menu_Colors_f ();
 			break;
 		// case 12:
 		//	M_Menu_Video_f ();
@@ -1726,6 +1736,125 @@ void M_Keys_Key (int k)
 		break;
 	}
 }
+
+/* Colors */
+
+int colors_cursor;
+void M_Menu_Colors_f (void)
+{
+	key_dest = key_menu;
+	m_state = m_colors;
+	m_entersound = true;
+	cheats_cursor = 0;
+}
+
+void M_Colors_Draw (void)
+{
+	float r;
+	qpic_t *p;
+	int ypos;
+	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
+	p = Draw_CachePic ("gfx/p_option.lmp");
+	M_DrawPic ( (320-p->width)/2, 4, p);
+	ypos = 32;
+	M_Print (16, ypos, "     Reset to defaults");
+	ypos += 8;
+	M_Print (16, ypos, "                   Hue");
+	r = (v_hue.value) / 360.0;
+	M_DrawSlider (220, ypos, r);
+	ypos += 8;
+	M_Print (16, ypos, "            Saturation");
+	r = v_saturation.value / 2.0;
+	M_DrawSlider (220, ypos, r);
+	ypos += 8;
+	M_Print (16, ypos, "             Lightness");
+	r = v_lightness.value / 2.0;
+	M_DrawSlider (220, ypos, r);
+	ypos += 8;
+
+	M_DrawCharacter (200, 32 + colors_cursor*8, 12+((int)(realtime*4)&1));
+}
+
+void M_AdjustColorSliders (int dir)
+{
+	S_LocalSound ("misc/menu3.wav");
+	switch (colors_cursor)
+	{
+	case 1: // hue
+		v_hue.value += dir * 10;
+		if (v_hue.value < 0) v_hue.value = 360;
+		if (v_hue.value > 360) v_hue.value = 0;
+		Cvar_SetValue ("v_hue", v_hue.value);
+		VID_PaletteColormath (host_basepal, v_hue.value, v_saturation.value, v_lightness.value);
+		break;
+	case 2: // saturation
+		v_saturation.value += dir * 0.1;
+		if (v_saturation.value < 0) v_saturation.value = 0;
+		if (v_saturation.value > 2) v_saturation.value = 2;
+		Cvar_SetValue ("v_saturation", v_saturation.value);
+		VID_PaletteColormath (host_basepal, v_hue.value, v_saturation.value, v_lightness.value);
+		break;
+	case 3: // lightness
+		v_lightness.value += dir * 0.1;
+		if (v_lightness.value < 0) v_lightness.value = 0;
+		if (v_lightness.value > 2) v_lightness.value = 2;
+		Cvar_SetValue ("v_lightness", v_lightness.value);
+		VID_PaletteColormath (host_basepal, v_hue.value, v_saturation.value, v_lightness.value);
+		break;
+	default: break;
+	}
+}
+
+void M_Colors_Key (int k)
+{
+	switch (k)
+	{
+	case RG_START:
+	case RG_B:
+		M_Menu_Main_f ();
+		break;
+
+	case RG_A:
+		m_entersound = true;
+		switch (colors_cursor)
+		{
+		case 0: // Reset
+			Cvar_SetValue("v_hue", 0);
+			Cvar_SetValue("v_saturation", 1.0);
+			Cvar_SetValue("v_lightness", 1.0);
+			VID_PaletteColormath (host_basepal, v_hue.value, v_saturation.value, v_lightness.value);
+			break;
+		default:
+			M_AdjustColorSliders (1);
+			break;
+		}
+		return;
+
+	case K_UPARROW:
+		S_LocalSound ("misc/menu1.wav");
+		colors_cursor--;
+		if (colors_cursor < 0)
+			colors_cursor = 3;
+		break;
+
+	case K_DOWNARROW:
+		S_LocalSound ("misc/menu1.wav");
+		colors_cursor++;
+		if (colors_cursor > 3)
+			colors_cursor = 0;
+		break;
+
+	case K_LEFTARROW:
+		M_AdjustColorSliders (-1);
+		break;
+
+	case K_RIGHTARROW:
+		M_AdjustColorSliders (1);
+		break;
+	}
+
+}
+
 
 //=============================================================================
 /* VIDEO MENU */
@@ -3325,6 +3454,10 @@ void M_Draw (void)
 		M_Video_Draw ();
 		break;
 
+	case m_colors:
+		M_Colors_Draw ();
+		break;
+
 	case m_help:
 		M_Help_Draw ();
 		break;
@@ -3419,6 +3552,10 @@ void M_Keydown (int key)
 
 	case m_video:
 		M_Video_Key (key);
+		return;
+
+	case m_colors:
+		M_Colors_Key (key);
 		return;
 
 	case m_help:

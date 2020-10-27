@@ -9,6 +9,8 @@
 viddef_t    vid;                // global video state
 unsigned short  d_8to16table[256];
 
+unsigned char og_pal[768];
+
 // The original defaults
 #define    BASEWIDTH    320
 #define    BASEHEIGHT   240 // 200
@@ -147,6 +149,111 @@ void RG_ErrorScreen (char *error, ...)
     exit(0);
 }
 
+void rgb2hsl (float r, float g, float b, float* h, float* s, float* l)
+{
+    float cmax, cmin, delta;
+
+    cmax = fmax(r, fmax(g, b));
+    cmin = fmin(r, fmin(g, b));
+    delta = cmax - cmin;
+    *l = (cmax + cmin) / 2;
+    *s = delta / (1 - fabs(2*(*l) - 1));
+    if (delta == 0)
+    {
+        *s = 0;
+        *h = 0;
+    }
+    else if (cmax == r)
+        *h = (g - b)/delta + (g < b ? 6 : 0);
+    else if (cmax == g)
+        *h = (b - r)/delta + 2;
+    else
+        *h = (r - g)/delta + 4;
+
+    *h *= 60.0;
+}
+
+void hsl2rgb (float h, float s, float l, float* r, float* g, float* b)
+{
+    if (h > 360)
+        h -= 360;
+    if (h < 0)
+        h += 360;
+
+    float c, x, m;
+    c = (1 - fabs(2*l - 1)) * s;
+    x = c * (1.0 - fabs(fmod(h / 60.0, 2) - 1.0));
+    m = l - c*0.5;
+
+    if (0 <= h && h < 60)
+    {
+        *r = c;
+        *g = x;
+        *b = 0;
+    }
+    else if (60 <= h && h < 120)
+    {
+        *r = x;
+        *g = c;
+        *b = 0;
+    }
+    else if (120 <= h && h < 180)
+    {
+        *r = 0;
+        *g = c;
+        *b = x;
+    }
+    else if (180 <= h && h < 240)
+    {
+        *r = 0;
+        *g = x;
+        *b = c;
+    }
+    else if (240 <= h && h < 300)
+    {
+        *r = x;
+        *g = 0;
+        *b = c;
+    }
+    else
+    {
+        *r = c;
+        *g = 0;
+        *b = x;
+    }
+
+    *r = fmin(*r+m, 1.0);
+    *g = fmin(*g+m, 1.0);
+    *b = fmin(*b+m, 1.0);
+}
+
+void VID_PaletteColormath (unsigned char *palette, float hshift, float sf, float lf)
+{
+    int i;
+    float r, g, b, h, s, l;
+    for (i = 0; i < 256; i++)
+    {
+        r = og_pal[i*3] / 255.0;
+        g = og_pal[i*3+1] / 255.0;
+        b = og_pal[i*3+2] / 255.0;
+
+        rgb2hsl(r, g, b, &h, &s, &l);
+
+        h += hshift;
+        if (h < 0) h += 360;
+        if (h > 360) h -= 360;
+        s = fmax(0.0, fmin(1.0, s * sf));
+        l = fmax(0.0, fmin(1.0, l * lf));
+
+        hsl2rgb(h, s, l, &r, &g, &b);
+        palette[i*3] = r * 255;
+        palette[i*3+1] = g * 255;
+        palette[i*3+2] = b * 255;
+    }
+
+    VID_SetPalette (palette);
+}
+
 void VID_Init (unsigned char *palette)
 {
     int pnum, chunk;
@@ -213,6 +320,10 @@ void VID_Init (unsigned char *palette)
     {
         Sys_Error("VID: Couldn't set video mode: %s\n", SDL_GetError());
     }
+
+    memcpy(og_pal, palette, 256*3);
+
+    VID_PaletteColormath(palette, 0, 1, 1);
 
     VID_SetPalette(palette);
 

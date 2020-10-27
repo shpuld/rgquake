@@ -1,0 +1,16 @@
+// load the base configuration
+exec rg_default.cfg
+
+// load the last saved configuration
+exec rg_config.cfg
+
+// run a user script file if present
+exec autoexec.cfg
+
+//
+// stuff command line statements
+//
+stuffcmds
+
+// start demos if not allready running a server
+startdemos hipdemo1 hipdemo2 hipdemo3 hipdemo4
