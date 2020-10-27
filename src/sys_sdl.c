@@ -103,7 +103,7 @@ void Sys_Error (char *error, ...)
     va_end (argptr);
 	fprintf(stderr, "Error: %s\n", string);
 
-    FILE errorfile = fopen("error.txt", "w");
+    FILE * errorfile = fopen("error.txt", "w");
     fprintf(errorfile, "Error: %s\n", string);
     fclose(errorfile);
 
