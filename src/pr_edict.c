@@ -31,6 +31,13 @@ globalvars_t	*pr_global_struct;
 float			*pr_globals;			// same as pr_global_struct
 int				pr_edict_size;	// in bytes
 
+// shp: 64 bit safe string stuff
+static	int			pr_stringssize;
+static	const char	**pr_knownstrings;
+static	int			pr_maxknownstrings;
+static	int			pr_numknownstrings;
+//
+
 unsigned short		pr_crc;
 
 int		type_size[8] = {1,sizeof(string_t)/4,1,3,1,1,sizeof(func_t)/4,sizeof(void *)/4};
@@ -191,7 +198,7 @@ ddef_t *ED_FindField (char *name)
 	for (i=0 ; i<progs->numfielddefs ; i++)
 	{
 		def = &pr_fielddefs[i];
-		if (!strcmp(pr_strings + def->s_name,name) )
+		if (!strcmp(PR_GetString(def->s_name), name))
 			return def;
 	}
 	return NULL;
@@ -211,7 +218,7 @@ ddef_t *ED_FindGlobal (char *name)
 	for (i=0 ; i<progs->numglobaldefs ; i++)
 	{
 		def = &pr_globaldefs[i];
-		if (!strcmp(pr_strings + def->s_name,name) )
+		if (!strcmp(PR_GetString(def->s_name), name))
 			return def;
 	}
 	return NULL;
@@ -231,7 +238,7 @@ dfunction_t *ED_FindFunction (char *name)
 	for (i=0 ; i<progs->numfunctions ; i++)
 	{
 		func = &pr_functions[i];
-		if (!strcmp(pr_strings + func->s_name,name) )
+		if (!strcmp(PR_GetString(func->s_name), name))
 			return func;
 	}
 	return NULL;
@@ -288,18 +295,18 @@ char *PR_ValueString (etype_t type, eval_t *val)
 	switch (type)
 	{
 	case ev_string:
-		sprintf (line, "%s", pr_strings + val->string);
+		sprintf (line, "%s", PR_GetString(val->string));
 		break;
 	case ev_entity:	
 		sprintf (line, "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)) );
 		break;
 	case ev_function:
 		f = pr_functions + val->function;
-		sprintf (line, "%s()", pr_strings + f->s_name);
+		sprintf (line, "%s()", PR_GetString(f->s_name));
 		break;
 	case ev_field:
 		def = ED_FieldAtOfs ( val->_int );
-		sprintf (line, ".%s", pr_strings + def->s_name);
+		sprintf (line, ".%s", PR_GetString(def->s_name));
 		break;
 	case ev_void:
 		sprintf (line, "void");
@@ -340,18 +347,18 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 	switch (type)
 	{
 	case ev_string:
-		sprintf (line, "%s", pr_strings + val->string);
+		sprintf (line, "%s", PR_GetString(val->string));
 		break;
 	case ev_entity:	
 		sprintf (line, "%i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)));
 		break;
 	case ev_function:
 		f = pr_functions + val->function;
-		sprintf (line, "%s", pr_strings + f->s_name);
+		sprintf (line, "%s", PR_GetString(f->s_name));
 		break;
 	case ev_field:
 		def = ED_FieldAtOfs ( val->_int );
-		sprintf (line, "%s", pr_strings + def->s_name);
+		sprintf (line, "%s", PR_GetString(def->s_name));
 		break;
 	case ev_void:
 		sprintf (line, "void");
@@ -393,7 +400,7 @@ char *PR_GlobalString (int ofs)
 	else
 	{
 		s = PR_ValueString (def->type, val);
-		sprintf (line,"%i(%s)%s", ofs, pr_strings + def->s_name, s);
+		sprintf (line,"%i(%s)%s", ofs, PR_GetString(def->s_name), s);
 	}
 	
 	i = strlen(line);
@@ -414,7 +421,7 @@ char *PR_GlobalStringNoContents (int ofs)
 	if (!def)
 		sprintf (line,"%i(\?\?\?)", ofs);
 	else
-		sprintf (line,"%i(%s)", ofs, pr_strings + def->s_name);
+		sprintf (line,"%i(%s)", ofs, PR_GetString(def->s_name));
 	
 	i = strlen(line);
 	for ( ; i<20 ; i++)
@@ -451,7 +458,7 @@ void ED_Print (edict_t *ed)
 	for (i=1 ; i<progs->numfielddefs ; i++)
 	{
 		d = &pr_fielddefs[i];
-		name = pr_strings + d->s_name;
+		name = PR_GetString(d->s_name);
 		if (name[strlen(name)-2] == '_')
 			continue;	// skip _x, _y, _z vars
 			
@@ -501,7 +508,7 @@ void ED_Write (FILE *f, edict_t *ed)
 	for (i=1 ; i<progs->numfielddefs ; i++)
 	{
 		d = &pr_fielddefs[i];
-		name = pr_strings + d->s_name;
+		name = PR_GetString(d->s_name);
 		if (name[strlen(name)-2] == '_')
 			continue;	// skip _x, _y, _z vars
 			
@@ -634,7 +641,7 @@ void ED_WriteGlobals (FILE *f)
 		&& type != ev_entity)
 			continue;
 
-		name = pr_strings + def->s_name;		
+		name = PR_GetString(def->s_name);
 		fprintf (f,"\"%s\" ", name);
 		fprintf (f,"\"%s\"\n", PR_UglyValueString(type, (eval_t *)&pr_globals[def->ofs]));		
 	}
@@ -690,20 +697,23 @@ void ED_ParseGlobals (char *data)
 ED_NewString
 =============
 */
-char *ED_NewString (char *string)
+
+// shp: 64 bit fixes, from markv/quakespasm
+string_t ED_NewString (const char *string) 
 {
-	char	*new, *new_p;
-	int		i,l;
-	
+	char		*new_p;
+	int			i,l;
+	string_t	num;
+
 	l = strlen(string) + 1;
-	new = Hunk_Alloc (l);
-	new_p = new;
+	num = PR_AllocString (l, &new_p);
 
 	for (i=0 ; i< l ; i++)
 	{
 		if (string[i] == '\\' && i < l-1)
 		{
 			i++;
+
 			if (string[i] == 'n')
 				*new_p++ = '\n';
 			else
@@ -712,8 +722,8 @@ char *ED_NewString (char *string)
 		else
 			*new_p++ = string[i];
 	}
-	
-	return new;
+
+	return num;
 }
 
 
@@ -739,7 +749,7 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 	switch (key->type & ~DEF_SAVEGLOBAL)
 	{
 	case ev_string:
-		*(string_t *)d = ED_NewString (s) - pr_strings;
+		*(string_t *)d = ED_NewString (s);
 		break;
 		
 	case ev_float:
@@ -823,19 +833,19 @@ char *ED_ParseEdict (char *data, edict_t *ent)
 		if (!data)
 			Sys_Error ("ED_ParseEntity: EOF without closing brace");
 		
-// anglehack is to allow QuakeEd to write single scalar angles
-// and allow them to be turned into vectors. (FIXME...)
-if (!strcmp(com_token, "angle"))
-{
-	strcpy (com_token, "angles");
-	anglehack = true;
-}
-else
-	anglehack = false;
+		// anglehack is to allow QuakeEd to write single scalar angles
+		// and allow them to be turned into vectors. (FIXME...)
+		if (!strcmp(com_token, "angle"))
+		{
+			strcpy (com_token, "angles");
+			anglehack = true;
+		}
+		else
+			anglehack = false;
 
-// FIXME: change light to _light to get rid of this hack
-if (!strcmp(com_token, "light"))
-	strcpy (com_token, "light_lev");	// hack for single light def
+		// FIXME: change light to _light to get rid of this hack
+		if (!strcmp(com_token, "light"))
+			strcpy (com_token, "light_lev");	// hack for single light def
 
 		strcpy (keyname, com_token);
 
@@ -869,12 +879,12 @@ if (!strcmp(com_token, "light"))
 			continue;
 		}
 
-if (anglehack)
-{
-char	temp[32];
-strcpy (temp, com_token);
-sprintf (com_token, "0 %s 0", temp);
-}
+		if (anglehack)
+		{
+			char	temp[32];
+			strcpy (temp, com_token);
+			sprintf (com_token, "0 %s 0", temp);
+		}
 
 		if (!ED_ParseEpair ((void *)&ent->v, key, com_token))
 			Host_Error ("ED_ParseEdict: parse error");
@@ -959,7 +969,7 @@ void ED_LoadFromFile (char *data)
 		}
 
 	// look for the spawn function
-		func = ED_FindFunction ( pr_strings + ent->v.classname );
+		func = ED_FindFunction (PR_GetString(ent->v.classname));
 
 		if (!func)
 		{
@@ -1011,6 +1021,18 @@ void PR_LoadProgs (void)
 
 	pr_functions = (dfunction_t *)((byte *)progs + progs->ofs_functions);
 	pr_strings = (char *)progs + progs->ofs_strings;
+
+
+	// shp: 64 bit safe stuff from markv/quakespasm
+	pr_numknownstrings = 0;
+	pr_maxknownstrings = 0;
+	pr_stringssize = progs->numstrings;
+	if (pr_knownstrings)
+		Z_Free ((void *)pr_knownstrings);
+	pr_knownstrings = NULL;
+	PR_SetEngineString("");
+	//
+
 	pr_globaldefs = (ddef_t *)((byte *)progs + progs->ofs_globaldefs);
 	pr_fielddefs = (ddef_t *)((byte *)progs + progs->ofs_fielddefs);
 	pr_statements = (dstatement_t *)((byte *)progs + progs->ofs_statements);
@@ -1103,4 +1125,83 @@ int NUM_FOR_EDICT(edict_t *e)
 	if (b < 0 || b >= sv.num_edicts)
 		Sys_Error ("NUM_FOR_EDICT: bad pointer");
 	return b;
+}
+
+
+// shp: 64 bit safe stuff from markv/quakespasm
+
+#define	PR_STRING_ALLOCSLOTS	256
+
+static void PR_AllocStringSlots (void)
+{
+	pr_maxknownstrings += PR_STRING_ALLOCSLOTS;
+	Con_DPrintf ("PR_AllocStringSlots: realloc'ing for %d slots\n", pr_maxknownstrings);
+	pr_knownstrings = (const char **) Z_Realloc ((void *)pr_knownstrings, pr_maxknownstrings * sizeof(char *));
+}
+
+const char *PR_GetString (int num)
+{
+	if (num >= 0 && num < pr_stringssize)
+		return pr_strings + num;
+	else if (num < 0 && num >= -pr_numknownstrings)
+	{
+		if (!pr_knownstrings[-1 - num])
+		{
+			Host_Error ("PR_GetString: attempt to get a non-existant string %d", num);
+			return "";
+		}
+		return pr_knownstrings[-1 - num];
+	}
+	else
+	{
+		return pr_strings;
+		Host_Error ("PR_GetString: invalid string offset %d", num);
+		return "";
+	}
+}
+
+int PR_SetEngineString (const char *s)
+{
+	int		i;
+
+	if (!s)
+		return 0;
+
+	if (s >= pr_strings && s <= pr_strings + pr_stringssize - 2)
+		return (int)(s - pr_strings);
+
+	for (i = 0; i < pr_numknownstrings; i++)
+	{
+		if (pr_knownstrings[i] == s)
+			return -1 - i;
+	}
+
+	if (i >= pr_maxknownstrings)
+		PR_AllocStringSlots();
+	pr_numknownstrings++;
+
+	pr_knownstrings[i] = s;
+	return -1 - i;
+}
+
+int PR_AllocString (int size, char **ptr)
+{
+	int		i;
+
+	if (!size)
+		return 0;
+	for (i = 0; i < pr_numknownstrings; i++)
+	{
+		if (!pr_knownstrings[i])
+			break;
+	}
+
+	if (i >= pr_maxknownstrings)
+		PR_AllocStringSlots();
+	pr_numknownstrings++;
+
+	pr_knownstrings[i] = (char *)Hunk_AllocName(size, "string");
+	if (ptr)
+		*ptr = (char *) pr_knownstrings[i];
+	return -1 - i;
 }

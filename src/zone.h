@@ -93,6 +93,8 @@ void Z_DumpHeap (void);
 void Z_CheckHeap (void);
 int Z_FreeMemory (void);
 
+void *Z_Realloc (void* ptr, int size);
+
 void *Hunk_Alloc (int size);		// returns 0 filled memory
 void *Hunk_AllocName (int size, char *name);
 

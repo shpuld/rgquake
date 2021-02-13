@@ -261,6 +261,52 @@ void Z_CheckHeap (void)
 	}
 }
 
+/*
+========================
+Z_Realloc - shp: copied from markv/quakespasm
+========================
+*/
+void *Z_Realloc(void *ptr, int size)
+{
+	int old_size;
+	void *old_ptr;
+	memblock_t *block;
+
+	printf("Z_Realloc: %p, %d", ptr, size);
+	if (!ptr)
+		return Z_Malloc (size);
+
+	printf("not a normal z_malloc\n");
+
+	block = (memblock_t *) ((byte *) ptr - sizeof (memblock_t));
+	if (block->id != ZONEID)
+		Sys_Error ("Z_Realloc: realloced a pointer without ZONEID");
+	if (block->tag == 0)
+		Sys_Error ("Z_Realloc: realloced a freed pointer");
+
+	old_size = block->size;
+	old_size -= (4 + (int)sizeof(memblock_t));	/* see Z_TagMalloc() */
+	old_ptr = ptr;
+
+	Z_Free (ptr);
+	ptr = Z_TagMalloc (size, 1);
+	if (!ptr)
+		Sys_Error ("Z_Realloc: failed on allocation of %d bytes", size);
+
+	if (ptr != old_ptr)
+	{
+		if (old_size < size)
+			memmove (ptr, old_ptr, old_size);
+		else
+			memmove (ptr, old_ptr, size);
+	}
+	if (old_size < size)
+		memset ((byte *)ptr + old_size, 0, size - old_size);
+
+	return ptr;
+}
+
+
 //============================================================================
 
 #define	HUNK_SENTINAL	0x1df001ed
