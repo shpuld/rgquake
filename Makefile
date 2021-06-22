@@ -77,12 +77,23 @@ SOURCE_FILES = \
 	zone.c			\
 
 # tool macros
-CC := mipsel-linux-gcc
-INCLUDES := -I/opt/gcw0-toolchain/usr/mipsel-gcw0-linux-uclibc/sysroot/usr/include/SDL
+TOOLKIT := /opt/gcw0-toolchain
+CC := $(TOOLKIT)/usr/bin/mipsel-linux-gcc
+INCLUDES := -I$(TOOLKIT)/usr/mipsel-gcw0-linux-uclibc/sysroot/usr/include/SDL
 CCFLAG := -ffast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations -Wall -Wextra -O2 -DSDL -D__linux__ -D_GNU_SOURCE=1 -D_REENTRANT $(INCLUDES)
 DBGFLAG := -g
 CCOBJFLAG := $(CCFLAG) -c
 LDFLAGS := -lm -lSDL -lpthread
+
+# Uncomment to build for OD BETA
+OD_BETA := 1
+
+HUGEEDIT := $(TOOLKIT)/usr/bin/hugeedit
+
+ifdef OD_BETA
+	# Add specific RG350 CPU optimizations (BETA FIRMWARE)
+	LDFLAGS += -Wl,--allow-multiple-definition -Wl,-zcommon-page-size=2097152 -Wl,-zmax-page-size=2097152 -lhugetlbfs
+endif
 
 # path macros
 BIN_PATH := bin
@@ -116,6 +127,9 @@ default: all
 # non-phony targets
 $(TARGET): $(OBJ)
 	$(LINKCMD)
+	@if [ "${OD_BETA}" = "1" ]; then\
+        $(HUGEEDIT) --text --data $(TARGET);\
+    fi
 
 $(OBJ_PATH)/%.o: $(SRC_PATH)/%.c*
 	$(CC) $(CCOBJFLAG) -o $@ $<
