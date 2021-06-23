@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=RgQuake-Rogue
 Type=Application
-Exec=rgquake -basedir /media/data/Quake -rogue
+Exec=./rogue.sh
 Icon=mp2
 Comment=Mission Pack 2: Dissolution of Eternity
 Terminal=false

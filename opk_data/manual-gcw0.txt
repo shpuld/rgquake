@@ -3,7 +3,7 @@ RgQuake
 An enhanced port of sdlquake made specifically for the RG350 platforms.
 This port supports dual analog controls and runs smooth on the RG350.
 
-In order to play, you need to place your Quake .pak files in /media/data/Quake/id1
+In order to play, you need to place your Quake .pak files in /media/data/local/home/Quake/id1
 If you've already set up Thenesis Quake then everything should already work.
 
 Changes to vanilla quake:

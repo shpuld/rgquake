@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=RgQuake
 Type=Application
-Exec=rgquake -basedir /media/data/Quake
+Exec=./rgquake.sh
 Icon=logo
 Comment=Enhanced port of Quake
 Terminal=false

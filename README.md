@@ -40,7 +40,7 @@ To install you can do it in two ways:
 
 1) Installing with OPK
 - Put the .opk in your `/media/data/apps`
-- Put your id1 directory's .pak files into `/media/data/Quake/id/`.
+- Put your id1 directory's .pak files into `/media/data/local/home/Quake/id/`.
 - If you've installed Thenesis Quake on your device via its OPK, your game files are already in the right place.
 
 OR

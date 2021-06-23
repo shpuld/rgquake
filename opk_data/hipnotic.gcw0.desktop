@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=RgQuake-Hipnotic
 Type=Application
-Exec=rgquake -basedir /media/data/Quake -hipnotic
+Exec=./hipnotic.sh
 Icon=mp1
 Comment=Mission Pack 1: Scourge of Armagon
 Terminal=false
